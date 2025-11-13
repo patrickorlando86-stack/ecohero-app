@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoHero - Plogging Adventure</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            padding: 30px 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .sync-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ffc107;
+            margin-left: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        .sync-indicator.synced {
+            background: #4caf50;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #43e97b;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #eee;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            background: white;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: #43e97b;
+            border-bottom: 3px solid #43e97b;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(67, 233, 123, 0.4);
+        }
+
+        .btn-danger {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .counter-section {
+            margin-bottom: 20px;
+        }
+
+        .counter-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .counter-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .counter-item h3 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .counter-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .counter-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 50%;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            background: #43e97b;
+            color: white;
+            transition: all 0.2s;
+        }
+
+        .counter-btn:active {
+            transform: scale(0.95);
+        }
+
+        .counter-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #43e97b;
+            min-width: 40px;
+        }
+
+        .photo-section {
+            margin-top: 20px;
+        }
+
+        .photo-input {
+            display: none;
+        }
+
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .photo-item {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #f8f9fa;
+        }
+
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-delete {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: rgba(255, 107, 107, 0.9);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        .session-info {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .session-info.active {
+            background: #d4edda;
+        }
+
+        .distance-display {
+            font-size: 32px;
+            font-weight: bold;
+            color: #43e97b;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+
+        .leaderboard-item.current-user {
+            background: linear-gradient(135deg, #43e97b20, #38f9d720);
+            border: 2px solid #43e97b;
+        }
+
+        .rank {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #43e97b;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+
+        .rank.gold {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+        }
+
+        .rank.silver {
+            background: linear-gradient(135deg, #C0C0C0, #808080);
+        }
+
+        .rank.bronze {
+            background: linear-gradient(135deg, #CD7F32, #8B4513);
+        }
+
+        .player-info {
+            flex: 1;
+        }
+
+        .player-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .player-stats {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .player-score {
+            font-size: 20px;
+            font-weight: bold;
+            color: #43e97b;
+        }
+
+        .badges-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .badge {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        .badge.unlocked {
+            background: linear-gradient(135deg, #43e97b20, #38f9d720);
+            border: 2px solid #43e97b;
+        }
+
+        .badge-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+            filter: grayscale(100%);
+        }
+
+        .badge.unlocked .badge-icon {
+            filter: grayscale(0%);
+            animation: bounce 0.5s;
+        }
+
+        .badge-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+        }
+
+        .badge.unlocked .badge-name {
+            color: #43e97b;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .name-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .name-input:focus {
+            outline: none;
+            border-color: #43e97b;
+        }
+
+        .gps-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ff6b6b;
+            margin-right: 5px;
+            animation: pulse 2s infinite;
+        }
+
+        .gps-indicator.active {
+            background: #43e97b;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        @media (max-width: 480px) {
+            .counter-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌱 EcoHero</h1>
+            <p class="subtitle">
+                Plogging, Biking & Smiling
+                <span class="sync-indicator" id="syncIndicator"></span>
+            </p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalPoints">0</div>
+                <div class="stat-label">Punti</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalWaste">0</div>
+                <div class="stat-label">Rifiuti</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalDistance">0</div>
+                <div class="stat-label">Km</div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('session')">Sessione</button>
+            <button class="tab" onclick="switchTab('leaderboard')">Classifica</button>
+            <button class="tab" onclick="switchTab('badges')">Badge</button>
+        </div>
+
+        <!-- TAB SESSIONE -->
+        <div id="session" class="tab-content active">
+            <div id="namePrompt" class="alert alert-warning">
+                ⚠️ Inserisci il tuo nome nella tab "Classifica" per iniziare!
+            </div>
+
+            <div class="session-info" id="sessionStatus">
+                <span class="gps-indicator" id="gpsIndicator"></span>
+                <span id="sessionStatusText">Pronto per iniziare</span>
+            </div>
+
+            <button class="btn btn-primary" id="startBtn" onclick="startSession()">
+                🚀 Inizia Missione
+            </button>
+            <button class="btn btn-danger" id="stopBtn" onclick="stopSession()" style="display: none;">
+                ⏹️ Termina Missione
+            </button>
+
+            <div id="activeSession" style="display: none;">
+                <div class="distance-display">
+                    <span id="currentDistance">0.00</span> km
+                </div>
+
+                <div class="counter-section">
+                    <h2 style="margin-bottom: 15px;">Rifiuti Raccolti</h2>
+                    <div class="counter-grid">
+                        <div class="counter-item">
+                            <h3>🧴 Plastica</h3>
+                            <div class="counter-controls">
+                                <button class="counter-btn" onclick="decrementCounter('plastic')">-</button>
+                                <span class="counter-value" id="plastic">0</span>
+                                <button class="counter-btn" onclick="incrementCounter('plastic')">+</button>
+                            </div>
+                        </div>
+                        <div class="counter-item">
+                            <h3>🍾 Vetro</h3>
+                            <div class="counter-controls">
+                                <button class="counter-btn" onclick="decrementCounter('glass')">-</button>
+                                <span class="counter-value" id="glass">0</span>
+                                <button class="counter-btn" onclick="incrementCounter('glass')">+</button>
+                            </div>
+                        </div>
+                        <div class="counter-item">
+                            <h3>🥫 Metallo</h3>
+                            <div class="counter-controls">
+                                <button class="counter-btn" onclick="decrementCounter('metal')">-</button>
+                                <span class="counter-value" id="metal">0</span>
+                                <button class="counter-btn" onclick="incrementCounter('metal')">+</button>
+                            </div>
+                        </div>
+                        <div class="counter-item">
+                            <h3>📄 Carta</h3>
+                            <div class="counter-controls">
+                                <button class="counter-btn" onclick="decrementCounter('paper')">-</button>
+                                <span class="counter-value" id="paper">0</span>
+                                <button class="counter-btn" onclick="incrementCounter('paper')">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="photo-section">
+                    <h2 style="margin-bottom: 15px;">Foto della Missione</h2>
+                    <button class="btn btn-secondary" onclick="document.getElementById('photoInput').click()">
+                        📷 Scatta Foto
+                    </button>
+                    <input type="file" id="photoInput" class="photo-input" accept="image/*" capture="environment" onchange="addPhoto(event)">
+                    <div class="photo-grid" id="photoGrid"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB CLASSIFICA -->
+        <div id="leaderboard" class="tab-content">
+            <div class="name-input-section" style="margin-bottom: 20px;">
+                <input type="text" id="userName" class="name-input" placeholder="Il tuo nome..." 
+                       onchange="saveName()">
+            </div>
+            <div id="leaderboardList" class="loading">Caricamento classifica</div>
+        </div>
+
+        <!-- TAB BADGE -->
+        <div id="badges" class="tab-content">
+            <h2 style="margin-bottom: 20px;">I Tuoi Achievement</h2>
+            <div class="badges-grid" id="badgesGrid"></div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getDatabase, ref, set, get, onValue, update, push } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+
+        // ⚠️ CONFIGURAZIONE FIREBASE - DA SOSTITUIRE CON LE TUE CHIAVI ⚠️
+        const firebaseConfig = {
+  apiKey: "AIzaSyB1cUzRnp2rclJfz5iWYvPR2Z5Bjpgu4As",
+  authDomain: "ecohero-plogging.firebaseapp.com",
+  databaseURL: "https://ecohero-plogging-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "ecohero-plogging",
+  storageBucket: "ecohero-plogging.firebasestorage.app",
+  messagingSenderId: "112248467010",
+  appId: "1:112248467010:web:e5847bbf06fc654cd7c7db",
+  measurementId: "G-BP9EZD8F3B"
+};
+
+        // Inizializza Firebase
+        let app, database;
+        let firebaseEnabled = false;
+
+        try {
+            app = initializeApp(firebaseConfig);
+            database = getDatabase(app);
+            firebaseEnabled = true;
+            console.log('✅ Firebase connesso!');
+            updateSyncIndicator(true);
+        } catch (error) {
+            console.warn('⚠️ Firebase non configurato. App funziona in modalità locale.');
+            console.log('Per abilitare Firebase, sostituisci le chiavi in firebaseConfig');
+            firebaseEnabled = false;
+            updateSyncIndicator(false);
+        }
+
+        // Variabili globali
+        window.database = database;
+        window.firebaseEnabled = firebaseEnabled;
+        window.userId = localStorage.getItem('userId') || generateUserId();
+        
+        let sessionActive = false;
+        let sessionStartTime = null;
+        let currentSession = {
+            distance: 0,
+            waste: { plastic: 0, glass: 0, metal: 0, paper: 0 },
+            photos: [],
+            points: 0
+        };
+        let watchId = null;
+        let lastPosition = null;
+        let userData = {
+            name: '',
+            userId: window.userId,
+            totalPoints: 0,
+            totalWaste: 0,
+            totalDistance: 0,
+            sessions: [],
+            badges: []
+        };
+
+        const availableBadges = [
+            { id: 'first', name: 'Prima Missione', icon: '🎯', requirement: 'sessions', value: 1 },
+            { id: 'collector', name: 'Collezionista', icon: '🗑️', requirement: 'waste', value: 50 },
+            { id: 'walker', name: 'Camminatore', icon: '👟', requirement: 'distance', value: 5 },
+            { id: 'photographer', name: 'Fotografo', icon: '📸', requirement: 'photos', value: 20 },
+            { id: 'hero', name: 'Eco Hero', icon: '🦸', requirement: 'waste', value: 100 },
+            { id: 'marathon', name: 'Maratoneta', icon: '🏃', requirement: 'distance', value: 20 }
+        ];
+
+        // Funzioni Firebase
+        function updateSyncIndicator(synced) {
+            const indicator = document.getElementById('syncIndicator');
+            if (indicator) {
+                if (synced) {
+                    indicator.classList.add('synced');
+                } else {
+                    indicator.classList.remove('synced');
+                }
+            }
+        }
+
+        async function saveToFirebase() {
+            if (!firebaseEnabled) {
+                saveToLocalStorage();
+                return;
+            }
+
+            try {
+                const userRef = ref(database, 'users/' + window.userId);
+                await set(userRef, {
+                    name: userData.name,
+                    totalPoints: userData.totalPoints,
+                    totalWaste: userData.totalWaste,
+                    totalDistance: userData.totalDistance,
+                    badges: userData.badges,
+                    lastUpdate: Date.now()
+                });
+                
+                // Salva anche localmente come backup
+                saveToLocalStorage();
+                updateSyncIndicator(true);
+            } catch (error) {
+                console.error('Errore salvataggio Firebase:', error);
+                saveToLocalStorage();
+            }
+        }
+
+        async function loadFromFirebase() {
+            if (!firebaseEnabled) {
+                loadFromLocalStorage();
+                return;
+            }
+
+            try {
+                const userRef = ref(database, 'users/' + window.userId);
+                const snapshot = await get(userRef);
+                
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    userData.name = data.name || '';
+                    userData.totalPoints = data.totalPoints || 0;
+                    userData.totalWaste = data.totalWaste || 0;
+                    userData.totalDistance = data.totalDistance || 0;
+                    userData.badges = data.badges || [];
+                    
+                    document.getElementById('userName').value = userData.name;
+                } else {
+                    loadFromLocalStorage();
+                }
+                
+                updateSyncIndicator(true);
+            } catch (error) {
+                console.error('Errore caricamento Firebase:', error);
+                loadFromLocalStorage();
+            }
+        }
+
+        function loadLeaderboard() {
+            if (!firebaseEnabled) {
+                loadLocalLeaderboard();
+                return;
+            }
+
+            const usersRef = ref(database, 'users');
+            onValue(usersRef, (snapshot) => {
+                const list = document.getElementById('leaderboardList');
+                list.innerHTML = '';
+                
+                const users = [];
+                snapshot.forEach((childSnapshot) => {
+                    const user = childSnapshot.val();
+                    if (user.name) {
+                        users.push({
+                            userId: childSnapshot.key,
+                            name: user.name,
+                            points: user.totalPoints || 0,
+                            waste: user.totalWaste || 0,
+                            distance: user.totalDistance || 0
+                        });
+                    }
+                });
+
+                users.sort((a, b) => b.points - a.points);
+
+                if (users.length === 0) {
+                    list.innerHTML = '<div class="alert alert-info">Nessun utente in classifica. Inizia tu!</div>';
+                    return;
+                }
+
+                users.forEach((user, index) => {
+                    const div = document.createElement('div');
+                    const isCurrentUser = user.userId === window.userId;
+                    div.className = 'leaderboard-item' + (isCurrentUser ? ' current-user' : '');
+                    
+                    let rankClass = '';
+                    if (index === 0) rankClass = 'gold';
+                    else if (index === 1) rankClass = 'silver';
+                    else if (index === 2) rankClass = 'bronze';
+                    
+                    div.innerHTML = `
+                        <div class="rank ${rankClass}">${index + 1}</div>
+                        <div class="player-info">
+                            <div class="player-name">${user.name}${isCurrentUser ? ' (Tu)' : ''}</div>
+                            <div class="player-stats">🗑️ ${user.waste} | 📍 ${user.distance.toFixed(1)} km</div>
+                        </div>
+                        <div class="player-score">${user.points}</div>
+                    `;
+                    list.appendChild(div);
+                });
+            });
+        }
+
+        // Funzioni localStorage (fallback)
+        function saveToLocalStorage() {
+            localStorage.setItem('ecoHeroData', JSON.stringify(userData));
+        }
+
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('ecoHeroData');
+            if (saved) {
+                userData = JSON.parse(saved);
+                document.getElementById('userName').value = userData.name || '';
+            }
+        }
+
+        function loadLocalLeaderboard() {
+            const list = document.getElementById('leaderboardList');
+            const users = [];
+            
+            if (userData.name) {
+                users.push({
+                    userId: window.userId,
+                    name: userData.name,
+                    points: userData.totalPoints,
+                    waste: userData.totalWaste,
+                    distance: userData.totalDistance
+                });
+            }
+
+            users.sort((a, b) => b.points - a.points);
+
+            if (users.length === 0) {
+                list.innerHTML = '<div class="alert alert-info">Inserisci il tuo nome e completa la prima missione!</div>';
+                return;
+            }
+
+            list.innerHTML = '';
+            users.forEach((user, index) => {
+                const div = document.createElement('div');
+                div.className = 'leaderboard-item current-user';
+                div.innerHTML = `
+                    <div class="rank">${index + 1}</div>
+                    <div class="player-info">
+                        <div class="player-name">${user.name} (Tu)</div>
+                        <div class="player-stats">🗑️ ${user.waste} | 📍 ${user.distance.toFixed(1)} km</div>
+                    </div>
+                    <div class="player-score">${user.points}</div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function generateUserId() {
+            const id = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('userId', id);
+            return id;
+        }
+
+        // Esporta funzioni globali
+        window.saveToFirebase = saveToFirebase;
+        window.loadFromFirebase = loadFromFirebase;
+        window.loadLeaderboard = loadLeaderboard;
+        window.userData = userData;
+        window.currentSession = currentSession;
+        window.sessionActive = sessionActive;
+        window.availableBadges = availableBadges;
+
+        // Inizializzazione
+        async function init() {
+            await loadFromFirebase();
+            updateStats();
+            loadLeaderboard();
+            updateBadges();
+            checkNamePrompt();
+        }
+
+        function checkNamePrompt() {
+            const prompt = document.getElementById('namePrompt');
+            if (userData.name) {
+                prompt.style.display = 'none';
+            } else {
+                prompt.style.display = 'block';
+            }
+        }
+
+        window.addEventListener('load', init);
+    </script>
+
+    <script>
+        // Gestione sessione
+        window.startSession = function() {
+            if (!userData.name) {
+                alert('⚠️ Inserisci prima il tuo nome nella tab "Classifica"!');
+                switchTab('leaderboard');
+                return;
+            }
+
+            if (!navigator.geolocation) {
+                alert('Il GPS non è disponibile sul tuo dispositivo');
+                return;
+            }
+
+            sessionActive = true;
+            sessionStartTime = Date.now();
+            currentSession = {
+                distance: 0,
+                waste: { plastic: 0, glass: 0, metal: 0, paper: 0 },
+                photos: [],
+                points: 0,
+                startTime: sessionStartTime
+            };
+
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'block';
+            document.getElementById('activeSession').style.display = 'block';
+            document.getElementById('sessionStatus').classList.add('active');
+            document.getElementById('sessionStatusText').textContent = 'Missione in corso...';
+            document.getElementById('gpsIndicator').classList.add('active');
+
+            watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    if (lastPosition) {
+                        const distance = calculateDistance(
+                            lastPosition.latitude,
+                            lastPosition.longitude,
+                            position.coords.latitude,
+                            position.coords.longitude
+                        );
+                        currentSession.distance += distance;
+                        document.getElementById('currentDistance').textContent = currentSession.distance.toFixed(2);
+                    }
+                    lastPosition = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude
+                    };
+                },
+                (error) => {
+                    console.error('Errore GPS:', error);
+                },
+                { enableHighAccuracy: true, maximumAge: 0 }
+            );
+        };
+
+        window.stopSession = function() {
+            if (!sessionActive) return;
+
+            sessionActive = false;
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+            lastPosition = null;
+
+            currentSession.points = calculatePoints(currentSession);
+
+            userData.sessions.push({
+                ...currentSession,
+                endTime: Date.now()
+            });
+
+            userData.totalDistance += currentSession.distance;
+            userData.totalWaste += Object.values(currentSession.waste).reduce((a, b) => a + b, 0);
+            userData.totalPoints += currentSession.points;
+
+            saveToFirebase();
+            checkBadges();
+            showSessionSummary();
+
+            document.getElementById('startBtn').style.display = 'block';
+            document.getElementById('stopBtn').style.display = 'none';
+            document.getElementById('activeSession').style.display = 'none';
+            document.getElementById('sessionStatus').classList.remove('active');
+            document.getElementById('sessionStatusText').textContent = 'Pronto per iniziare';
+            document.getElementById('gpsIndicator').classList.remove('active');
+
+            ['plastic', 'glass', 'metal', 'paper'].forEach(type => {
+                document.getElementById(type).textContent = '0';
+            });
+            document.getElementById('currentDistance').textContent = '0.00';
+            document.getElementById('photoGrid').innerHTML = '';
+
+            updateStats();
+            loadLeaderboard();
+        };
+
+        function showSessionSummary() {
+            const totalWaste = Object.values(currentSession.waste).reduce((a, b) => a + b, 0);
+            alert(`🎉 Missione Completata!\n\n` +
+                  `📍 Distanza: ${currentSession.distance.toFixed(2)} km\n` +
+                  `🗑️ Rifiuti: ${totalWaste}\n` +
+                  `⭐ Punti guadagnati: ${currentSession.points}\n\n` +
+                  `Totale punti: ${userData.totalPoints}`);
+        }
+
+        window.incrementCounter = function(type) {
+            if (!sessionActive) return;
+            currentSession.waste[type]++;
+            document.getElementById(type).textContent = currentSession.waste[type];
+        };
+
+        window.decrementCounter = function(type) {
+            if (!sessionActive || currentSession.waste[type] === 0) return;
+            currentSession.waste[type]--;
+            document.getElementById(type).textContent = currentSession.waste[type];
+        };
+
+        window.addPhoto = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                currentSession.photos.push(e.target.result);
+                displayPhotos();
+            };
+            reader.readAsDataURL(file);
+        };
+
+        function displayPhotos() {
+            const grid = document.getElementById('photoGrid');
+            grid.innerHTML = '';
+            currentSession.photos.forEach((photo, index) => {
+                const div = document.createElement('div');
+                div.className = 'photo-item';
+                div.innerHTML = `
+                    <img src="${photo}" alt="Foto ${index + 1}">
+                    <button class="photo-delete" onclick="deletePhoto(${index})">×</button>
+                `;
+                grid.appendChild(div);
+            });
+        }
+
+        window.deletePhoto = function(index) {
+            currentSession.photos.splice(index, 1);
+            displayPhotos();
+        };
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                    Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        function calculatePoints(session) {
+            let points = 0;
+            points += session.waste.plastic * 2;
+            points += session.waste.glass * 3;
+            points += session.waste.metal * 4;
+            points += session.waste.paper * 1;
+            points += Math.floor(session.distance * 10);
+            points += session.photos.length * 5;
+            return points;
+        }
+
+        window.saveName = function() {
+            const name = document.getElementById('userName').value.trim();
+            if (name) {
+                userData.name = name;
+                localStorage.setItem('userName', name);
+                saveToFirebase();
+                loadLeaderboard();
+                checkNamePrompt();
+            }
+        };
+
+        function updateStats() {
+            document.getElementById('totalPoints').textContent = userData.totalPoints;
+            document.getElementById('totalWaste').textContent = userData.totalWaste;
+            document.getElementById('totalDistance').textContent = userData.totalDistance.toFixed(1);
+        }
+
+        function updateBadges() {
+            const grid = document.getElementById('badgesGrid');
+            grid.innerHTML = '';
+
+            availableBadges.forEach(badge => {
+                const unlocked = isBadgeUnlocked(badge);
+                const div = document.createElement('div');
+                div.className = `badge ${unlocked ? 'unlocked' : ''}`;
+                div.innerHTML = `
+                    <div class="badge-icon">${badge.icon}</div>
+                    <div class="badge-name">${badge.name}</div>
+                `;
+                grid.appendChild(div);
+            });
+        }
+
+        function isBadgeUnlocked(badge) {
+            switch(badge.requirement) {
+                case 'sessions':
+                    return userData.sessions.length >= badge.value;
+                case 'waste':
+                    return userData.totalWaste >= badge.value;
+                case 'distance':
+                    return userData.totalDistance >= badge.value;
+                case 'photos':
+                    const totalPhotos = userData.sessions.reduce((sum, s) => sum + (s.photos?.length || 0), 0);
+                    return totalPhotos >= badge.value;
+                default:
+                    return false;
+            }
+        }
+
+        function checkBadges() {
+            availableBadges.forEach(badge => {
+                if (isBadgeUnlocked(badge) && !userData.badges.includes(badge.id)) {
+                    userData.badges.push(badge.id);
+                    setTimeout(() => {
+                        alert(`🎉 Nuovo Badge Sbloccato!\n\n${badge.icon} ${badge.name}`);
+                    }, 500);
+                }
+            });
+            updateBadges();
+        }
+
+        window.switchTab = function(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+
+            if (tabName === 'leaderboard') {
+                loadLeaderboard();
+            } else if (tabName === 'badges') {
+                updateBadges();
+            }
+        };
+    </script>
+</body>
+</html>
