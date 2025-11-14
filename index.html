@@ -735,7 +735,7 @@
         </div>
         <div id="routeMap"></div>
         <div class="map-footer">
-            <button class="btn btn-primary" onclick="shareMapScreenshot()">📸 Condividi</button>
+            <button class="btn btn-primary" onclick="shareMapScreenshot()">📸 Condividi su Instagram</button>
             <button class="btn btn-secondary" onclick="closeRouteMap()">Chiudi</button>
         </div>
     </div>
@@ -1237,29 +1237,47 @@
             document.getElementById('mapModal').classList.remove('active');
         };
 
-        // NUOVO: Funzione condivisione Instagram
+        // NUOVO: Funzione condivisione Instagram con istruzioni chiare
         window.shareMapScreenshot = async function() {
             const totalWaste = Object.values(currentSession.waste).reduce((a, b) => a + b, 0);
             const shareText = `🌱 Ho percorso ${currentSession.distance.toFixed(2)} km e raccolto ${totalWaste} rifiuti con EcoHero!\n\n#EcoHero #DAOP #Plogging #NoviLigure`;
             
-            if (navigator.share) {
+            // Prova prima condivisione nativa (mobile)
+            if (navigator.share && navigator.canShare && navigator.canShare({ text: shareText })) {
                 try {
                     await navigator.share({
                         title: 'Il mio percorso EcoHero!',
                         text: shareText,
                         url: window.location.href
                     });
+                    // Se condivisione va a buon fine, mostra istruzioni per screenshot
+                    setTimeout(() => {
+                        alert('💡 TIP: Fai anche screenshot di questa mappa per mostrare il percorso su Instagram! 📸');
+                    }, 1000);
+                    return;
                 } catch (err) {
+                    // Utente ha annullato, continua con piano B
                     console.log('Condivisione annullata');
                 }
-            } else {
-                if (navigator.clipboard) {
-                    await navigator.clipboard.writeText(shareText + '\n\n' + window.location.href);
-                    alert('✅ Testo copiato! Ora fai screenshot della mappa e condividi su Instagram! 📸');
-                } else {
-                    alert('📸 Fai screenshot della mappa e condividi su Instagram!\n\n' + shareText);
+            }
+            
+            // Piano B: Copia testo + istruzioni dettagliate
+            let copied = false;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                try {
+                    await navigator.clipboard.writeText(shareText);
+                    copied = true;
+                } catch (err) {
+                    console.log('Clipboard non disponibile');
                 }
             }
+            
+            // Mostra istruzioni chiare
+            const instructions = copied 
+                ? `✅ TESTO COPIATO!\n\n📸 ORA FAI COSÌ:\n\n1️⃣ Fai SCREENSHOT di questa mappa\n   (Pulsanti volume + power del telefono)\n\n2️⃣ Apri Instagram\n\n3️⃣ Nuova storia o post\n\n4️⃣ Carica lo screenshot\n\n5️⃣ INCOLLA il testo\n   (già copiato negli appunti!)\n\n6️⃣ Pubblica! 🚀\n\nHashtag: #EcoHero #DAOP #Plogging`
+                : `📸 COME CONDIVIDERE:\n\n1️⃣ Fai SCREENSHOT di questa mappa\n\n2️⃣ Apri Instagram\n\n3️⃣ Carica lo screenshot\n\n4️⃣ Aggiungi questo testo:\n\n${shareText}\n\n5️⃣ Pubblica! 🚀`;
+            
+            alert(instructions);
         };
 
         window.incrementCounter = function(type) {
