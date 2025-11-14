@@ -274,6 +274,18 @@
             text-align: center;
         }
 
+        /* NUOVO: Stile per debug GPS */
+        .gps-debug {
+            font-size: 11px;
+            margin-top: 8px;
+            color: #666;
+            font-weight: 600;
+            background: rgba(67, 233, 123, 0.1);
+            padding: 5px 10px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+
         .leaderboard-item {
             display: flex;
             align-items: center;
@@ -617,9 +629,11 @@
             </div>
 
             <div class="session-info" id="sessionStatus">
-                <span class="gps-indicator" id="gpsIndicator"></span>
-                <span id="sessionStatusText">Pronto per iniziare</span>
-                <div id="gpsDebug" style="font-size: 11px; margin-top: 5px; color: #666;"></div>
+                <div>
+                    <span class="gps-indicator" id="gpsIndicator"></span>
+                    <span id="sessionStatusText">Pronto per iniziare</span>
+                </div>
+                <div id="gpsDebug" class="gps-debug" style="display: none;"></div>
             </div>
 
             <button class="btn btn-primary" id="startBtn" onclick="startSession()">
@@ -631,7 +645,7 @@
 
             <div id="activeSession" style="display: none;">
                 <div class="distance-display">
-                    <span id="currentDistance">0.00</span> km
+                    <span id="currentDistance">0.000</span> km
                 </div>
 
                 <div class="counter-section">
@@ -734,7 +748,6 @@
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getDatabase, ref, set, get, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
 
-        // ⚠️ CONFIGURAZIONE FIREBASE - DA SOSTITUIRE CON LE TUE CHIAVI ⚠️
         const firebaseConfig = {
             apiKey: "AIzaSyB1cUzRnp2rclJfz5iWYvPR2Z5Bjpgu4As",
             authDomain: "ecohero-plogging.firebaseapp.com",
@@ -772,7 +785,7 @@
             waste: { plastic: 0, glass: 0, metal: 0, paper: 0 },
             photos: [],
             points: 0,
-            routeCoordinates: [] // NUOVO: Array per salvare percorso
+            routeCoordinates: []
         };
         let watchId = null;
         let lastPosition = null;
@@ -1000,7 +1013,7 @@
     </script>
 
     <script>
-        // Gestione sessione
+        // Gestione sessione CON GPS MIGLIORATO
         window.startSession = function() {
             if (!userData.name) {
                 alert('⚠️ Inserisci prima il tuo nome nella tab "Classifica"!');
@@ -1021,7 +1034,7 @@
                 photos: [],
                 points: 0,
                 startTime: sessionStartTime,
-                routeCoordinates: [] // NUOVO: Reset array percorso
+                routeCoordinates: []
             };
 
             document.getElementById('startBtn').style.display = 'none';
@@ -1030,20 +1043,23 @@
             document.getElementById('sessionStatus').classList.add('active');
             document.getElementById('sessionStatusText').textContent = 'Missione in corso...';
             document.getElementById('gpsIndicator').classList.add('active');
+            
+            // NUOVO: Mostra debug GPS
+            const debugEl = document.getElementById('gpsDebug');
+            debugEl.style.display = 'block';
+            debugEl.textContent = '📡 GPS: Connessione in corso...';
 
+            // GPS CON PARAMETRI MIGLIORATI
             watchId = navigator.geolocation.watchPosition(
                 (position) => {
-                    // NUOVO: Salva coordinate per mappa
+                    // Salva coordinate per mappa
                     currentSession.routeCoordinates.push([
                         position.coords.latitude,
                         position.coords.longitude
                     ]);
                     
-                    // Debug GPS
-                    const debugEl = document.getElementById('gpsDebug');
-                    if (debugEl) {
-                        debugEl.textContent = `📡 GPS: ${currentSession.routeCoordinates.length} punti tracciati`;
-                    }
+                    // NUOVO: Aggiorna debug GPS
+                    debugEl.textContent = `📡 GPS: ${currentSession.routeCoordinates.length} punti tracciati`;
                     
                     if (lastPosition) {
                         const distance = calculateDistance(
@@ -1053,9 +1069,10 @@
                             position.coords.longitude
                         );
                         
-                        // Accetta distanze anche piccole (maggiore sensibilità)
-                        if (distance > 0.001) { // Minimo 1 metro
+                        // NUOVO: Sensibilità maggiore - minimo 1 metro
+                        if (distance > 0.001) {
                             currentSession.distance += distance;
+                            // NUOVO: Mostra 3 decimali invece di 2
                             document.getElementById('currentDistance').textContent = currentSession.distance.toFixed(3);
                         }
                     }
@@ -1066,12 +1083,13 @@
                 },
                 (error) => {
                     console.error('Errore GPS:', error);
+                    debugEl.textContent = '📡 GPS: Errore - Verifica permessi';
                     alert('⚠️ Errore GPS. Verifica i permessi di localizzazione.');
                 },
                 { 
                     enableHighAccuracy: true, 
                     timeout: 15000, 
-                    maximumAge: 2000 // Più frequente
+                    maximumAge: 2000  // NUOVO: Aggiornamento più frequente
                 }
             );
         };
@@ -1085,6 +1103,9 @@
                 watchId = null;
             }
             lastPosition = null;
+
+            // Nascondi debug
+            document.getElementById('gpsDebug').style.display = 'none';
 
             currentSession.points = calculatePoints(currentSession);
 
@@ -1111,7 +1132,7 @@
             ['plastic', 'glass', 'metal', 'paper'].forEach(type => {
                 document.getElementById(type).textContent = '0';
             });
-            document.getElementById('currentDistance').textContent = '0.00';
+            document.getElementById('currentDistance').textContent = '0.000';
             document.getElementById('photoGrid').innerHTML = '';
 
             updateStats();
@@ -1122,7 +1143,7 @@
             const totalWaste = Object.values(currentSession.waste).reduce((a, b) => a + b, 0);
             
             const statsHTML = `
-                <p>📍 Distanza: <strong>${currentSession.distance.toFixed(2)} km</strong></p>
+                <p>📍 Distanza: <strong>${currentSession.distance.toFixed(3)} km</strong></p>
                 <p>🗑️ Rifiuti: <strong>${totalWaste}</strong></p>
                 <p>⭐ Punti guadagnati: <strong>${currentSession.points}</strong></p>
                 <p style="margin-top: 15px;">Totale punti: <strong>${userData.totalPoints}</strong></p>
@@ -1136,32 +1157,28 @@
             document.getElementById('summaryModal').classList.remove('active');
         };
 
-        // NUOVA FUNZIONE: Mostra mappa percorso
+        // MAPPA CON MIGLIORAMENTI
         window.showRouteMap = function() {
-            // Controllo se c'è un percorso
             if (!currentSession.routeCoordinates || currentSession.routeCoordinates.length < 2) {
                 alert('⚠️ Percorso troppo corto per visualizzare la mappa. Cammina un po\' di più nella prossima missione!');
                 return;
             }
 
-            // Apro modal mappa
             const mapModal = document.getElementById('mapModal');
             mapModal.classList.add('active');
 
-            // Inizializzo mappa Leaflet
             setTimeout(() => {
                 const mapContainer = document.getElementById('routeMap');
-                mapContainer.innerHTML = ''; // Pulisco
+                mapContainer.innerHTML = '';
                 
                 const map = L.map('routeMap');
                 
-                // Aggiungo tiles OpenStreetMap
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© OpenStreetMap contributors',
                     maxZoom: 19
                 }).addTo(map);
                 
-                // Ombra percorso (linea nera sotto)
+                // NUOVO: Ombra percorso (linea nera sotto)
                 L.polyline(currentSession.routeCoordinates, {
                     color: '#000000',
                     weight: 9,
@@ -1169,7 +1186,7 @@
                     smoothFactor: 1
                 }).addTo(map);
                 
-                // Disegno percorso principale (linea verde spessa)
+                // NUOVO: Linea più spessa e visibile
                 const polyline = L.polyline(currentSession.routeCoordinates, {
                     color: '#43e97b',
                     weight: 6,
@@ -1179,7 +1196,6 @@
                     lineJoin: 'round'
                 }).addTo(map);
                 
-                // Marker START (verde)
                 const startIcon = L.divIcon({
                     className: 'custom-marker start-marker',
                     html: '📍 START',
@@ -1188,7 +1204,6 @@
                 });
                 L.marker(currentSession.routeCoordinates[0], { icon: startIcon }).addTo(map);
                 
-                // Marker FINISH (rosso)
                 const finishIcon = L.divIcon({
                     className: 'custom-marker finish-marker',
                     html: '🏁 FINISH',
@@ -1198,13 +1213,12 @@
                 L.marker(currentSession.routeCoordinates[currentSession.routeCoordinates.length - 1], 
                     { icon: finishIcon }).addTo(map);
                 
-                // Zoom automatico per vedere tutto il percorso
                 map.fitBounds(polyline.getBounds(), { 
                     padding: [50, 50],
                     maxZoom: 16
                 });
                 
-                // NUOVO: Aggiungi info distanza sulla mappa
+                // NUOVO: Box con info distanza sulla mappa
                 const distanceInfo = L.control({ position: 'topright' });
                 distanceInfo.onAdd = function() {
                     const div = L.DomUtil.create('div', 'distance-info-box');
@@ -1223,12 +1237,11 @@
             document.getElementById('mapModal').classList.remove('active');
         };
 
-        // NUOVO: Funzione condivisione screenshot mappa
+        // NUOVO: Funzione condivisione Instagram
         window.shareMapScreenshot = async function() {
             const totalWaste = Object.values(currentSession.waste).reduce((a, b) => a + b, 0);
             const shareText = `🌱 Ho percorso ${currentSession.distance.toFixed(2)} km e raccolto ${totalWaste} rifiuti con EcoHero!\n\n#EcoHero #DAOP #Plogging #NoviLigure`;
             
-            // Prova condivisione nativa (mobile)
             if (navigator.share) {
                 try {
                     await navigator.share({
@@ -1240,7 +1253,6 @@
                     console.log('Condivisione annullata');
                 }
             } else {
-                // Fallback: copia testo negli appunti
                 if (navigator.clipboard) {
                     await navigator.clipboard.writeText(shareText + '\n\n' + window.location.href);
                     alert('✅ Testo copiato! Ora fai screenshot della mappa e condividi su Instagram! 📸');
@@ -1312,7 +1324,6 @@
             points += session.waste.paper * 1;
             points += Math.floor(session.distance * 10);
             // RIMOSSI PUNTI FOTO per evitare abusi
-            // points += session.photos.length * 5;
             return points;
         }
 
