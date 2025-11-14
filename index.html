@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EcoHero - Plogging Adventure</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
     <style>
         * {
             margin: 0;
@@ -427,9 +431,135 @@
             color: #666;
         }
 
-        .loading::after {
-            content: '...';
-            animation: dots 1.5s infinite;
+        /* MAPPA MODAL */
+        .map-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: white;
+            z-index: 10000;
+            flex-direction: column;
+        }
+
+        .map-modal.active {
+            display: flex;
+        }
+
+        .map-header {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            padding: 15px 20px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .map-header h2 {
+            font-size: 20px;
+            margin: 0;
+        }
+
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        #routeMap {
+            flex: 1;
+            width: 100%;
+        }
+
+        .map-footer {
+            padding: 15px;
+            background: #f8f9fa;
+            display: flex;
+            gap: 10px;
+        }
+
+        .map-footer .btn {
+            margin: 0;
+        }
+
+        /* SUMMARY MODAL */
+        .summary-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .summary-modal.active {
+            display: flex;
+        }
+
+        .summary-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .summary-content h2 {
+            color: #43e97b;
+            margin-bottom: 20px;
+        }
+
+        .summary-stats {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        .summary-stats p {
+            margin: 10px 0;
+            font-size: 16px;
+        }
+
+        .summary-stats strong {
+            color: #43e97b;
+            font-size: 20px;
+        }
+
+        /* Leaflet custom markers */
+        .custom-marker {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+            white-space: nowrap;
+        }
+
+        .start-marker {
+            border: 3px solid #43e97b;
+            color: #43e97b;
+        }
+
+        .finish-marker {
+            border: 3px solid #ff6b6b;
+            color: #ff6b6b;
         }
 
         @keyframes pulse {
@@ -440,12 +570,6 @@
         @keyframes bounce {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-10px); }
-        }
-
-        @keyframes dots {
-            0%, 20% { content: '.'; }
-            40% { content: '..'; }
-            60%, 100% { content: '...'; }
         }
 
         @media (max-width: 480px) {
@@ -574,24 +698,52 @@
         </div>
     </div>
 
+    <!-- SUMMARY MODAL -->
+    <div id="summaryModal" class="summary-modal">
+        <div class="summary-content">
+            <h2>🎉 Missione Completata!</h2>
+            <div class="summary-stats" id="summaryStats"></div>
+            <button class="btn btn-primary" onclick="showRouteMap()">
+                🗺️ Guarda il tuo percorso
+            </button>
+            <button class="btn btn-secondary" onclick="closeSummary()">
+                ✅ OK
+            </button>
+        </div>
+    </div>
+
+    <!-- MAP MODAL -->
+    <div id="mapModal" class="map-modal">
+        <div class="map-header">
+            <button class="back-btn" onclick="closeRouteMap()">← Indietro</button>
+            <h2>Il tuo percorso</h2>
+        </div>
+        <div id="routeMap"></div>
+        <div class="map-footer">
+            <button class="btn btn-secondary" onclick="closeRouteMap()">Chiudi</button>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getDatabase, ref, set, get, onValue, update, push } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+        import { getDatabase, ref, set, get, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
 
         // ⚠️ CONFIGURAZIONE FIREBASE - DA SOSTITUIRE CON LE TUE CHIAVI ⚠️
         const firebaseConfig = {
-  apiKey: "AIzaSyB1cUzRnp2rclJfz5iWYvPR2Z5Bjpgu4As",
-  authDomain: "ecohero-plogging.firebaseapp.com",
-  databaseURL: "https://ecohero-plogging-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "ecohero-plogging",
-  storageBucket: "ecohero-plogging.firebasestorage.app",
-  messagingSenderId: "112248467010",
-  appId: "1:112248467010:web:e5847bbf06fc654cd7c7db",
-  measurementId: "G-BP9EZD8F3B"
-};
+            apiKey: "AIzaSyB1cUzRnp2rclJfz5iWYvPR2Z5Bjpgu4As",
+            authDomain: "ecohero-plogging.firebaseapp.com",
+            databaseURL: "https://ecohero-plogging-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "ecohero-plogging",
+            storageBucket: "ecohero-plogging.firebasestorage.app",
+            messagingSenderId: "112248467010",
+            appId: "1:112248467010:web:e5847bbf06fc654cd7c7db",
+            measurementId: "G-BP9EZD8F3B"
+        };
 
-        // Inizializza Firebase
         let app, database;
         let firebaseEnabled = false;
 
@@ -602,13 +754,11 @@
             console.log('✅ Firebase connesso!');
             updateSyncIndicator(true);
         } catch (error) {
-            console.warn('⚠️ Firebase non configurato. App funziona in modalità locale.');
-            console.log('Per abilitare Firebase, sostituisci le chiavi in firebaseConfig');
+            console.warn('⚠️ Firebase non configurato.');
             firebaseEnabled = false;
             updateSyncIndicator(false);
         }
 
-        // Variabili globali
         window.database = database;
         window.firebaseEnabled = firebaseEnabled;
         window.userId = localStorage.getItem('userId') || generateUserId();
@@ -619,7 +769,8 @@
             distance: 0,
             waste: { plastic: 0, glass: 0, metal: 0, paper: 0 },
             photos: [],
-            points: 0
+            points: 0,
+            routeCoordinates: [] // NUOVO: Array per salvare percorso
         };
         let watchId = null;
         let lastPosition = null;
@@ -642,7 +793,6 @@
             { id: 'marathon', name: 'Maratoneta', icon: '🏃', requirement: 'distance', value: 20 }
         ];
 
-        // Funzioni Firebase
         function updateSyncIndicator(synced) {
             const indicator = document.getElementById('syncIndicator');
             if (indicator) {
@@ -671,7 +821,6 @@
                     lastUpdate: Date.now()
                 });
                 
-                // Salva anche localmente come backup
                 saveToLocalStorage();
                 updateSyncIndicator(true);
             } catch (error) {
@@ -765,7 +914,6 @@
             });
         }
 
-        // Funzioni localStorage (fallback)
         function saveToLocalStorage() {
             localStorage.setItem('ecoHeroData', JSON.stringify(userData));
         }
@@ -821,7 +969,6 @@
             return id;
         }
 
-        // Esporta funzioni globali
         window.saveToFirebase = saveToFirebase;
         window.loadFromFirebase = loadFromFirebase;
         window.loadLeaderboard = loadLeaderboard;
@@ -830,7 +977,6 @@
         window.sessionActive = sessionActive;
         window.availableBadges = availableBadges;
 
-        // Inizializzazione
         async function init() {
             await loadFromFirebase();
             updateStats();
@@ -872,7 +1018,8 @@
                 waste: { plastic: 0, glass: 0, metal: 0, paper: 0 },
                 photos: [],
                 points: 0,
-                startTime: sessionStartTime
+                startTime: sessionStartTime,
+                routeCoordinates: [] // NUOVO: Reset array percorso
             };
 
             document.getElementById('startBtn').style.display = 'none';
@@ -884,6 +1031,12 @@
 
             watchId = navigator.geolocation.watchPosition(
                 (position) => {
+                    // NUOVO: Salva coordinate per mappa
+                    currentSession.routeCoordinates.push([
+                        position.coords.latitude,
+                        position.coords.longitude
+                    ]);
+                    
                     if (lastPosition) {
                         const distance = calculateDistance(
                             lastPosition.latitude,
@@ -901,8 +1054,9 @@
                 },
                 (error) => {
                     console.error('Errore GPS:', error);
+                    alert('⚠️ Errore GPS. Verifica i permessi di localizzazione.');
                 },
-                { enableHighAccuracy: true, maximumAge: 0 }
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
             );
         };
 
@@ -950,12 +1104,85 @@
 
         function showSessionSummary() {
             const totalWaste = Object.values(currentSession.waste).reduce((a, b) => a + b, 0);
-            alert(`🎉 Missione Completata!\n\n` +
-                  `📍 Distanza: ${currentSession.distance.toFixed(2)} km\n` +
-                  `🗑️ Rifiuti: ${totalWaste}\n` +
-                  `⭐ Punti guadagnati: ${currentSession.points}\n\n` +
-                  `Totale punti: ${userData.totalPoints}`);
+            
+            const statsHTML = `
+                <p>📍 Distanza: <strong>${currentSession.distance.toFixed(2)} km</strong></p>
+                <p>🗑️ Rifiuti: <strong>${totalWaste}</strong></p>
+                <p>⭐ Punti guadagnati: <strong>${currentSession.points}</strong></p>
+                <p style="margin-top: 15px;">Totale punti: <strong>${userData.totalPoints}</strong></p>
+            `;
+            
+            document.getElementById('summaryStats').innerHTML = statsHTML;
+            document.getElementById('summaryModal').classList.add('active');
         }
+
+        window.closeSummary = function() {
+            document.getElementById('summaryModal').classList.remove('active');
+        };
+
+        // NUOVA FUNZIONE: Mostra mappa percorso
+        window.showRouteMap = function() {
+            // Controllo se c'è un percorso
+            if (!currentSession.routeCoordinates || currentSession.routeCoordinates.length < 2) {
+                alert('⚠️ Percorso troppo corto per visualizzare la mappa. Cammina un po\' di più nella prossima missione!');
+                return;
+            }
+
+            // Apro modal mappa
+            const mapModal = document.getElementById('mapModal');
+            mapModal.classList.add('active');
+
+            // Inizializzo mappa Leaflet
+            setTimeout(() => {
+                const mapContainer = document.getElementById('routeMap');
+                mapContainer.innerHTML = ''; // Pulisco
+                
+                const map = L.map('routeMap');
+                
+                // Aggiungo tiles OpenStreetMap
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors',
+                    maxZoom: 19
+                }).addTo(map);
+                
+                // Disegno percorso (linea blu/verde)
+                const polyline = L.polyline(currentSession.routeCoordinates, {
+                    color: '#43e97b',
+                    weight: 5,
+                    opacity: 0.7,
+                    smoothFactor: 1
+                }).addTo(map);
+                
+                // Marker START (verde)
+                const startIcon = L.divIcon({
+                    className: 'custom-marker start-marker',
+                    html: '📍 START',
+                    iconSize: [80, 30],
+                    iconAnchor: [40, 15]
+                });
+                L.marker(currentSession.routeCoordinates[0], { icon: startIcon }).addTo(map);
+                
+                // Marker FINISH (rosso)
+                const finishIcon = L.divIcon({
+                    className: 'custom-marker finish-marker',
+                    html: '🏁 FINISH',
+                    iconSize: [80, 30],
+                    iconAnchor: [40, 15]
+                });
+                L.marker(currentSession.routeCoordinates[currentSession.routeCoordinates.length - 1], 
+                    { icon: finishIcon }).addTo(map);
+                
+                // Zoom automatico per vedere tutto il percorso
+                map.fitBounds(polyline.getBounds(), { 
+                    padding: [50, 50],
+                    maxZoom: 16
+                });
+            }, 100);
+        };
+
+        window.closeRouteMap = function() {
+            document.getElementById('mapModal').classList.remove('active');
+        };
 
         window.incrementCounter = function(type) {
             if (!sessionActive) return;
@@ -1018,7 +1245,8 @@
             points += session.waste.metal * 4;
             points += session.waste.paper * 1;
             points += Math.floor(session.distance * 10);
-            points += session.photos.length * 5;
+            // RIMOSSI PUNTI FOTO per evitare abusi
+            // points += session.photos.length * 5;
             return points;
         }
 
