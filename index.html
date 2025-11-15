@@ -1058,9 +1058,6 @@
                         position.coords.longitude
                     ]);
                     
-                    // NUOVO: Aggiorna debug GPS
-                    debugEl.textContent = `📡 GPS: ${currentSession.routeCoordinates.length} punti tracciati`;
-                    
                     if (lastPosition) {
                         const distance = calculateDistance(
                             lastPosition.latitude,
@@ -1069,13 +1066,19 @@
                             position.coords.longitude
                         );
                         
-                        // NUOVO: Sensibilità maggiore - minimo 1 metro
-                        if (distance > 0.001) {
-                            currentSession.distance += distance;
-                            // NUOVO: Mostra 3 decimali invece di 2
-                            document.getElementById('currentDistance').textContent = currentSession.distance.toFixed(3);
-                        }
+                        // RIMOSSA SOGLIA - Traccia tutto!
+                        currentSession.distance += distance;
+                        document.getElementById('currentDistance').textContent = currentSession.distance.toFixed(3);
+                        
+                        // DEBUG DETTAGLIATO - Mostra ogni calcolo
+                        const debugEl = document.getElementById('gpsDebug');
+                        debugEl.textContent = `📡 ${currentSession.routeCoordinates.length} punti | Ultimo: +${(distance * 1000).toFixed(1)}m | Tot: ${currentSession.distance.toFixed(3)} km`;
+                    } else {
+                        // Primo punto - nessun calcolo ancora
+                        const debugEl = document.getElementById('gpsDebug');
+                        debugEl.textContent = `📡 GPS: 1 punto (iniziale) - Muoviti per tracciare!`;
                     }
+                    
                     lastPosition = {
                         latitude: position.coords.latitude,
                         longitude: position.coords.longitude
