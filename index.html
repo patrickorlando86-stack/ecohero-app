@@ -1020,141 +1020,166 @@ let lastPosition = window.lastPosition;
 
         window.addEventListener('load', init);
     </script>
+<script>
+    // Gestione sessione CON GPS MIGLIORATO E FILTRO ACCURATEZZA
+    window.startSession = function() {
+        if (!userData.name) {
+            alert('⚠️ Inserisci prima il tuo nome nella tab "Classifica"!');
+            switchTab('leaderboard');
+            return;
+        }
 
-    <script>
-        // Gestione sessione CON GPS MIGLIORATO
-        window.startSession = function() {
-            if (!userData.name) {
-                alert('⚠️ Inserisci prima il tuo nome nella tab "Classifica"!');
-                switchTab('leaderboard');
-                return;
-            }
+        if (!navigator.geolocation) {
+            alert('Il GPS non è disponibile sul tuo dispositivo');
+            return;
+        }
 
-            if (!navigator.geolocation) {
-                alert('Il GPS non è disponibile sul tuo dispositivo');
-                return;
-            }
+        sessionActive = true;
+        sessionStartTime = Date.now();
+        currentSession = {
+            distance: 0,
+            waste: { plastic: 0, glass: 0, metal: 0, paper: 0 },
+            photos: [],
+            points: 0,
+            startTime: sessionStartTime,
+            routeCoordinates: []
+        };
 
-            sessionActive = true;
-            sessionStartTime = Date.now();
-            currentSession = {
-                distance: 0,
-                waste: { plastic: 0, glass: 0, metal: 0, paper: 0 },
-                photos: [],
-                points: 0,
-                startTime: sessionStartTime,
-                routeCoordinates: []
-            };
+        document.getElementById('startBtn').style.display = 'none';
+        document.getElementById('stopBtn').style.display = 'block';
+        document.getElementById('activeSession').style.display = 'block';
+        document.getElementById('sessionStatus').classList.add('active');
+        document.getElementById('sessionStatusText').textContent = 'Missione in corso...';
+        document.getElementById('gpsIndicator').classList.add('active');
+        
+        // Mostra debug GPS
+        const debugEl = document.getElementById('gpsDebug');
+        debugEl.style.display = 'block';
+        debugEl.textContent = '📡 GPS: Connessione in corso...';
 
-            document.getElementById('startBtn').style.display = 'none';
-            document.getElementById('stopBtn').style.display = 'block';
-            document.getElementById('activeSession').style.display = 'block';
-            document.getElementById('sessionStatus').classList.add('active');
-            document.getElementById('sessionStatusText').textContent = 'Missione in corso...';
-            document.getElementById('gpsIndicator').classList.add('active');
-            
-            // NUOVO: Mostra debug GPS
-            const debugEl = document.getElementById('gpsDebug');
-            debugEl.style.display = 'block';
-            debugEl.textContent = '📡 GPS: Connessione in corso...';
-
-            // GPS CON PARAMETRI MIGLIORATI
-            watchId = navigator.geolocation.watchPosition(
-                (position) => {
-                    // Salva coordinate per mappa
-                    currentSession.routeCoordinates.push([
+        // GPS CON PARAMETRI MIGLIORATI E FILTRO ACCURATEZZA
+        watchId = navigator.geolocation.watchPosition(
+            (position) => {
+                // FILTRO ACCURATEZZA: Ignora posizioni imprecise (GPS indoor/debole)
+                const accuracy = position.coords.accuracy; // accuratezza in metri
+                
+                console.log('📡 Accuratezza GPS:', accuracy, 'metri');
+                
+                // Ignora posizioni con accuratezza peggiore di 20 metri
+                if (accuracy > 20) {
+                    console.log('⚠️ GPS troppo impreciso, ignoro questa posizione');
+                    debugEl.textContent = `📡 GPS: Segnale debole (±${accuracy.toFixed(0)}m)`;
+                    return; // SALTA questa posizione
+                }
+                
+                // Salva coordinate per mappa
+                currentSession.routeCoordinates.push([
+                    position.coords.latitude,
+                    position.coords.longitude
+                ]);
+                
+                // Aggiorna debug GPS con accuratezza
+                debugEl.textContent = `📡 GPS: ${currentSession.routeCoordinates.length} punti (±${accuracy.toFixed(0)}m)`;
+                
+                // CALCOLO DISTANZA
+                if (window.lastPosition) {
+                    const distance = calculateDistance(
+                        window.lastPosition.latitude,
+                        window.lastPosition.longitude,
                         position.coords.latitude,
                         position.coords.longitude
-                    ]);
+                    );
                     
-                    // NUOVO: Aggiorna debug GPS
-                    debugEl.textContent = `📡 GPS: ${currentSession.routeCoordinates.length} punti tracciati`;
+                    // DEBUG: stampa info
+                    console.log('=== DEBUG GPS ===');
+                    console.log('Posizione precedente:', window.lastPosition);
+                    console.log('Posizione attuale:', position.coords.latitude, position.coords.longitude);
+                    console.log('Distanza calcolata:', distance, 'km');
+                    console.log('Distanza in metri:', (distance * 1000).toFixed(2), 'm');
                     
-      if (window.lastPosition) {  // ← USA window.lastPosition
-    const distance = calculateDistance(
-        window.lastPosition.latitude,
-        window.lastPosition.longitude,
-        position.coords.latitude,
-        position.coords.longitude
-    );
-    
-    // DEBUG: stampa SEMPRE
-    console.log('=== DEBUG GPS ===');
-    console.log('Posizione precedente:', lastPosition);
-    console.log('Posizione attuale:', position.coords.latitude, position.coords.longitude);
-    console.log('Distanza calcolata:', distance, 'km');
-    console.log('Distanza in metri:', (distance * 1000).toFixed(2), 'm');
-    
-    if (distance > 0) {  // NESSUNA soglia minima
-        currentSession.distance += distance;
-        document.getElementById('currentDistance').textContent = currentSession.distance.toFixed(3);
-        console.log('✅ Distanza AGGIUNTA! Totale:', currentSession.distance);
-    } else {
-        console.log('❌ Distanza = 0, non aggiunta');
-    }
-}
-window.lastPosition = {
-    latitude: position.coords.latitude,
-    longitude: position.coords.longitude
-};                },
-                (error) => {
-                    console.error('Errore GPS:', error);
-                    debugEl.textContent = '📡 GPS: Errore - Verifica permessi';
-                    alert('⚠️ Errore GPS. Verifica i permessi di localizzazione.');
-                },
-                { 
-                    enableHighAccuracy: true, 
-                    timeout: 15000, 
-                    maximumAge: 2000  // NUOVO: Aggiornamento più frequente
+                    if (distance > 0) {
+                        currentSession.distance += distance;
+                        document.getElementById('currentDistance').textContent = currentSession.distance.toFixed(3);
+                        console.log('✅ Distanza AGGIUNTA! Totale:', currentSession.distance, 'km');
+                    } else {
+                        console.log('❌ Distanza = 0, non aggiunta');
+                    }
                 }
-            );
-        };
-
-        window.stopSession = function() {
-            if (!sessionActive) return;
-
-            sessionActive = false;
-            if (watchId) {
-                navigator.geolocation.clearWatch(watchId);
-                watchId = null;
+                
+                // Salva posizione attuale per il prossimo calcolo
+                window.lastPosition = {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude
+                };
+            },
+            (error) => {
+                console.error('Errore GPS:', error);
+                debugEl.textContent = '📡 GPS: Errore - Verifica permessi';
+                alert('⚠️ Errore GPS. Verifica i permessi di localizzazione.');
+            },
+            { 
+                enableHighAccuracy: true, 
+                timeout: 15000, 
+                maximumAge: 2000
             }
-            lastPosition = null;
+        );
+    };
 
-            // Nascondi debug
-            document.getElementById('gpsDebug').style.display = 'none';
+    window.stopSession = function() {
+        if (!sessionActive) return;
 
-            currentSession.points = calculatePoints(currentSession);
+        sessionActive = false;
+        
+        // Ferma tracking GPS
+        if (watchId) {
+            navigator.geolocation.clearWatch(watchId);
+            watchId = null;
+        }
+        
+        // Reset lastPosition
+        window.lastPosition = null;
 
-            userData.sessions.push({
-                ...currentSession,
-                endTime: Date.now()
-            });
+        // Nascondi debug
+        document.getElementById('gpsDebug').style.display = 'none';
 
-            userData.totalDistance += currentSession.distance;
-            userData.totalWaste += Object.values(currentSession.waste).reduce((a, b) => a + b, 0);
-            userData.totalPoints += currentSession.points;
+        // Calcola punti
+        currentSession.points = calculatePoints(currentSession);
 
-            saveToFirebase();
-            checkBadges();
-            showSessionSummary();
+        // Salva sessione
+        userData.sessions.push({
+            ...currentSession,
+            endTime: Date.now()
+        });
 
-            document.getElementById('startBtn').style.display = 'block';
-            document.getElementById('stopBtn').style.display = 'none';
-            document.getElementById('activeSession').style.display = 'none';
-            document.getElementById('sessionStatus').classList.remove('active');
-            document.getElementById('sessionStatusText').textContent = 'Pronto per iniziare';
-            document.getElementById('gpsIndicator').classList.remove('active');
+        // Aggiorna totali
+        userData.totalDistance += currentSession.distance;
+        userData.totalWaste += Object.values(currentSession.waste).reduce((a, b) => a + b, 0);
+        userData.totalPoints += currentSession.points;
 
-            ['plastic', 'glass', 'metal', 'paper'].forEach(type => {
-                document.getElementById(type).textContent = '0';
-            });
-            document.getElementById('currentDistance').textContent = '0.000';
-            document.getElementById('photoGrid').innerHTML = '';
+        // Salva su Firebase
+        saveToFirebase();
+        checkBadges();
+        showSessionSummary();
 
-            updateStats();
-            loadLeaderboard();
-        };
+        // Reset UI
+        document.getElementById('startBtn').style.display = 'block';
+        document.getElementById('stopBtn').style.display = 'none';
+        document.getElementById('activeSession').style.display = 'none';
+        document.getElementById('sessionStatus').classList.remove('active');
+        document.getElementById('sessionStatusText').textContent = 'Pronto per iniziare';
+        document.getElementById('gpsIndicator').classList.remove('active');
 
+        // Reset contatori
+        ['plastic', 'glass', 'metal', 'paper'].forEach(type => {
+            document.getElementById(type).textContent = '0';
+        });
+        document.getElementById('currentDistance').textContent = '0.000';
+        document.getElementById('photoGrid').innerHTML = '';
+
+        // Aggiorna statistiche
+        updateStats();
+        loadLeaderboard();
+    }
         function showSessionSummary() {
             const totalWaste = Object.values(currentSession.waste).reduce((a, b) => a + b, 0);
             
