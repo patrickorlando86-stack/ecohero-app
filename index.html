@@ -1047,9 +1047,9 @@
             // NUOVO: Mostra debug GPS
             const debugEl = document.getElementById('gpsDebug');
             debugEl.style.display = 'block';
-            debugEl.textContent = '📡 GPS: Connessione in corso...';
+            debugEl.textContent = '📡 GPS: Connessione in corso... (attendi 10-30 sec)';
 
-            // GPS CON PARAMETRI MIGLIORATI
+            // GPS CON PARAMETRI MIGLIORATI e TIMEOUT PIÙ LUNGO
             watchId = navigator.geolocation.watchPosition(
                 (position) => {
                     // Salva coordinate per mappa
@@ -1076,7 +1076,7 @@
                     } else {
                         // Primo punto - nessun calcolo ancora
                         const debugEl = document.getElementById('gpsDebug');
-                        debugEl.textContent = `📡 GPS: 1 punto (iniziale) - Muoviti per tracciare!`;
+                        debugEl.textContent = `📡 GPS CONNESSO! 1 punto acquisito - Muoviti per tracciare!`;
                     }
                     
                     lastPosition = {
@@ -1086,13 +1086,25 @@
                 },
                 (error) => {
                     console.error('Errore GPS:', error);
-                    debugEl.textContent = '📡 GPS: Errore - Verifica permessi';
-                    alert('⚠️ Errore GPS. Verifica i permessi di localizzazione.');
+                    const debugEl = document.getElementById('gpsDebug');
+                    
+                    // Messaggi di errore specifici
+                    if (error.code === 1) {
+                        debugEl.textContent = '📡 GPS: Permesso negato! Abilita GPS nelle impostazioni.';
+                        alert('⚠️ Permesso GPS negato!\n\nVai nelle impostazioni del browser e abilita la posizione per questo sito.');
+                    } else if (error.code === 2) {
+                        debugEl.textContent = '📡 GPS: Posizione non disponibile. Sei all\'aperto?';
+                    } else if (error.code === 3) {
+                        debugEl.textContent = '📡 GPS: Timeout - Riprovo... Esci all\'aperto!';
+                    } else {
+                        debugEl.textContent = '📡 GPS: Errore sconosciuto - Riavvia missione';
+                        alert('⚠️ Errore GPS. Chiudi e riapri l\'app, poi riprova all\'aperto.');
+                    }
                 },
                 { 
                     enableHighAccuracy: true, 
-                    timeout: 15000, 
-                    maximumAge: 2000  // NUOVO: Aggiornamento più frequente
+                    timeout: 30000,  // 30 secondi invece di 15
+                    maximumAge: 2000
                 }
             );
         };
