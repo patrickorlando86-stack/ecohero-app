@@ -777,19 +777,27 @@
 
         window.database = database;
         window.firebaseEnabled = firebaseEnabled;
-        window.userId = localStorage.getItem('userId') || generateUserId();
-        
-        let sessionActive = false;
-        let sessionStartTime = null;
-        let currentSession = {
-            distance: 0,
-            waste: { plastic: 0, glass: 0, metal: 0, paper: 0 },
-            photos: [],
-            points: 0,
-            routeCoordinates: []
-        };
-        let watchId = null;
-        let lastPosition = null;
+       window.userId = localStorage.getItem('userId') || generateUserId();
+
+// RENDI TUTTE LE VARIABILI DI SESSIONE GLOBALI
+window.sessionActive = false;
+window.sessionStartTime = null;
+window.currentSession = {
+    distance: 0,
+    waste: { plastic: 0, glass: 0, metal: 0, paper: 0 },
+    photos: [],
+    points: 0,
+    routeCoordinates: []
+};
+window.watchId = null;
+window.lastPosition = null;  // ← QUESTA ERA IL PROBLEMA!
+
+// Mantieni anche le variabili locali per compatibilità
+let sessionActive = window.sessionActive;
+let sessionStartTime = window.sessionStartTime;
+let currentSession = window.currentSession;
+let watchId = window.watchId;
+let lastPosition = window.lastPosition;
         let userData = {
             name: '',
             userId: window.userId,
@@ -1062,10 +1070,10 @@
                     // NUOVO: Aggiorna debug GPS
                     debugEl.textContent = `📡 GPS: ${currentSession.routeCoordinates.length} punti tracciati`;
                     
-                    if (lastPosition) {
+      if (window.lastPosition) {  // ← USA window.lastPosition
     const distance = calculateDistance(
-        lastPosition.latitude,
-        lastPosition.longitude,
+        window.lastPosition.latitude,
+        window.lastPosition.longitude,
         position.coords.latitude,
         position.coords.longitude
     );
@@ -1085,7 +1093,7 @@
         console.log('❌ Distanza = 0, non aggiunta');
     }
 }
-lastPosition = {
+window.lastPosition = {
     latitude: position.coords.latitude,
     longitude: position.coords.longitude
 };                },
