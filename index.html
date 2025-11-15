@@ -1098,7 +1098,7 @@ let lastPosition = window.lastPosition;
                     console.log('Distanza in metri:', (distance * 1000).toFixed(2), 'm');
                     
             // Ignora movimenti sotto i 5 metri (GPS drift quando sei fermo)
-if (distance > 0.005) {  // 0.005 km = 5 metri
+if (distance > 0.008) {  // 0.008 km = 8 metri
     currentSession.distance += distance;
     document.getElementById('currentDistance').textContent = currentSession.distance.toFixed(3);
     console.log('✅ Distanza AGGIUNTA! +' + (distance * 1000).toFixed(1) + 'm | Totale:', currentSession.distance, 'km');
