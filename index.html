@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -1047,9 +1048,9 @@
             // NUOVO: Mostra debug GPS
             const debugEl = document.getElementById('gpsDebug');
             debugEl.style.display = 'block';
-            debugEl.textContent = '📡 GPS: Connessione in corso... (attendi 10-30 sec)';
+            debugEl.textContent = '📡 GPS: Connessione in corso...';
 
-            // GPS CON PARAMETRI MIGLIORATI e TIMEOUT PIÙ LUNGO
+            // GPS CON PARAMETRI MIGLIORATI
             watchId = navigator.geolocation.watchPosition(
                 (position) => {
                     // Salva coordinate per mappa
@@ -1057,6 +1058,9 @@
                         position.coords.latitude,
                         position.coords.longitude
                     ]);
+                    
+                    // NUOVO: Aggiorna debug GPS
+                    debugEl.textContent = `📡 GPS: ${currentSession.routeCoordinates.length} punti tracciati`;
                     
                     if (lastPosition) {
                         const distance = calculateDistance(
@@ -1066,19 +1070,13 @@
                             position.coords.longitude
                         );
                         
-                        // RIMOSSA SOGLIA - Traccia tutto!
-                        currentSession.distance += distance;
-                        document.getElementById('currentDistance').textContent = currentSession.distance.toFixed(3);
-                        
-                        // DEBUG DETTAGLIATO - Mostra ogni calcolo
-                        const debugEl = document.getElementById('gpsDebug');
-                        debugEl.textContent = `📡 ${currentSession.routeCoordinates.length} punti | Ultimo: +${(distance * 1000).toFixed(1)}m | Tot: ${currentSession.distance.toFixed(3)} km`;
-                    } else {
-                        // Primo punto - nessun calcolo ancora
-                        const debugEl = document.getElementById('gpsDebug');
-                        debugEl.textContent = `📡 GPS CONNESSO! 1 punto acquisito - Muoviti per tracciare!`;
+                        // NUOVO: Sensibilità maggiore - minimo 1 metro
+                        if (distance > 0.001) {
+                            currentSession.distance += distance;
+                            // NUOVO: Mostra 3 decimali invece di 2
+                            document.getElementById('currentDistance').textContent = currentSession.distance.toFixed(3);
+                        }
                     }
-                    
                     lastPosition = {
                         latitude: position.coords.latitude,
                         longitude: position.coords.longitude
@@ -1086,25 +1084,13 @@
                 },
                 (error) => {
                     console.error('Errore GPS:', error);
-                    const debugEl = document.getElementById('gpsDebug');
-                    
-                    // Messaggi di errore specifici
-                    if (error.code === 1) {
-                        debugEl.textContent = '📡 GPS: Permesso negato! Abilita GPS nelle impostazioni.';
-                        alert('⚠️ Permesso GPS negato!\n\nVai nelle impostazioni del browser e abilita la posizione per questo sito.');
-                    } else if (error.code === 2) {
-                        debugEl.textContent = '📡 GPS: Posizione non disponibile. Sei all\'aperto?';
-                    } else if (error.code === 3) {
-                        debugEl.textContent = '📡 GPS: Timeout - Riprovo... Esci all\'aperto!';
-                    } else {
-                        debugEl.textContent = '📡 GPS: Errore sconosciuto - Riavvia missione';
-                        alert('⚠️ Errore GPS. Chiudi e riapri l\'app, poi riprova all\'aperto.');
-                    }
+                    debugEl.textContent = '📡 GPS: Errore - Verifica permessi';
+                    alert('⚠️ Errore GPS. Verifica i permessi di localizzazione.');
                 },
                 { 
                     enableHighAccuracy: true, 
-                    timeout: 30000,  // 30 secondi invece di 15
-                    maximumAge: 2000
+                    timeout: 15000, 
+                    maximumAge: 2000  // NUOVO: Aggiornamento più frequente
                 }
             );
         };
