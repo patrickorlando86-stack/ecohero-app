@@ -1097,13 +1097,14 @@ let lastPosition = window.lastPosition;
                     console.log('Distanza calcolata:', distance, 'km');
                     console.log('Distanza in metri:', (distance * 1000).toFixed(2), 'm');
                     
-                    if (distance > 0) {
-                        currentSession.distance += distance;
-                        document.getElementById('currentDistance').textContent = currentSession.distance.toFixed(3);
-                        console.log('✅ Distanza AGGIUNTA! Totale:', currentSession.distance, 'km');
-                    } else {
-                        console.log('❌ Distanza = 0, non aggiunta');
-                    }
+            // Ignora movimenti sotto i 5 metri (GPS drift quando sei fermo)
+if (distance > 0.005) {  // 0.005 km = 5 metri
+    currentSession.distance += distance;
+    document.getElementById('currentDistance').textContent = currentSession.distance.toFixed(3);
+    console.log('✅ Distanza AGGIUNTA! +' + (distance * 1000).toFixed(1) + 'm | Totale:', currentSession.distance, 'km');
+} else {
+    console.log('⏸️ Movimento troppo piccolo (<5m), ignorato - probabilmente sei fermo');
+}
                 }
                 
                 // Salva posizione attuale per il prossimo calcolo
