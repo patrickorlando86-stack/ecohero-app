@@ -1063,25 +1063,32 @@
                     debugEl.textContent = `📡 GPS: ${currentSession.routeCoordinates.length} punti tracciati`;
                     
                     if (lastPosition) {
-                        const distance = calculateDistance(
-                            lastPosition.latitude,
-                            lastPosition.longitude,
-                            position.coords.latitude,
-                            position.coords.longitude
-                        );
-                        
-                        // NUOVO: Sensibilità maggiore - minimo 1 metro
-                        if (distance > 0.001) {
-                            currentSession.distance += distance;
-                            // NUOVO: Mostra 3 decimali invece di 2
-                            document.getElementById('currentDistance').textContent = currentSession.distance.toFixed(3);
-                        }
-                    }
-                    lastPosition = {
-                        latitude: position.coords.latitude,
-                        longitude: position.coords.longitude
-                    };
-                },
+    const distance = calculateDistance(
+        lastPosition.latitude,
+        lastPosition.longitude,
+        position.coords.latitude,
+        position.coords.longitude
+    );
+    
+    // DEBUG: stampa SEMPRE
+    console.log('=== DEBUG GPS ===');
+    console.log('Posizione precedente:', lastPosition);
+    console.log('Posizione attuale:', position.coords.latitude, position.coords.longitude);
+    console.log('Distanza calcolata:', distance, 'km');
+    console.log('Distanza in metri:', (distance * 1000).toFixed(2), 'm');
+    
+    if (distance > 0) {  // NESSUNA soglia minima
+        currentSession.distance += distance;
+        document.getElementById('currentDistance').textContent = currentSession.distance.toFixed(3);
+        console.log('✅ Distanza AGGIUNTA! Totale:', currentSession.distance);
+    } else {
+        console.log('❌ Distanza = 0, non aggiunta');
+    }
+}
+lastPosition = {
+    latitude: position.coords.latitude,
+    longitude: position.coords.longitude
+};                },
                 (error) => {
                     console.error('Errore GPS:', error);
                     debugEl.textContent = '📡 GPS: Errore - Verifica permessi';
